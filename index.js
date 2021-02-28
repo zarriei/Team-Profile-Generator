@@ -1,76 +1,79 @@
-const inquirer = require('inquirer');
-const fs = require('fs');
-const http = require('http');
+const inquirer = require("inquirer");
+const fs = require("fs");
 const util = require("util");
-const Choices = require('inquirer/lib/objects/choices');
+//const inquirer = require("inquirer");
 const writeFileAsync = util.promisify(fs.writeFile);
+const generateTeamPage = require("./src/generateTeamPage");
 
 
-
+// inherent classes
 const Employee = require("./lib/Employee");
 const Engineer = require("./lib/Engineer");
 const Intern = require("./lib/Intern");
 const Manager = require("./lib/Manager");
 
 
+const team = [];
 
 
 
-
-const init = () => {
-    employeeInfo()
-    .then(response => {
-        if (response.role === "Engineer") {
-            engineerEmp();
-        } else if (response.role === "Manager") {
-            managerEmp();
-        } else if (response.role === "Intern") {
-            internEmp();
-        }   newMember()
+const init = async () => {
+    await employeeInfo()
         .then(response => {
-            if(response.add_new === "Yes") {
-                employeeInfo();
-            }else if(response.add_new === "No") {
-                // generateHTML();
-                console.log("No new employees.")
-            }
+            if (response.role === "Engineer") {
+                return engineerEmp();
+            } else if (response.role === "Manager") {
+                return managerEmp();
+            } else if (response.role === "Intern") {
+                return internEmp();
+            };
 
-        })
-    }) 
+        });
+
+    newMember();
+    makingTeam();
+};
+
+
+// this will allow us to ask for user input on the emplyee
+const employeeInfo = () => {
+    return inquirer
+        .prompt([
+            {
+                // Employee Name
+                type: 'input',
+                message: "What is the Employee's name?",
+                name: 'name',
+            },
+            {
+                // Employee Title
+                type: 'list',
+                message: 'Select: ',
+                choices: ['Employee',
+                    'Manager',
+                    'Engineer',
+                    'Intern',
+
+                ],
+                name: 'role',
+            },
+            {
+                // Employee id
+                type: 'input',
+                message: "What is the Employee id?",
+                name: 'id',
+            },
+            {
+                // Employee email
+                type: 'input',
+                message: "What is the Employee email?",
+                name: 'email',
+            },
+        ]);
 
 };
 
 
-const employeeInfo = () => {
-    return inquirer.prompt([
-        {
-            type: "input",
-            name: "name",
-            message: "What is your name?"
-        },
-        {
-            type: "input",
-            name: "id",
-            message: "What is your Employee Id?"
-        },
-        {
-            type: "input",
-            name: "email",
-            message: "What is your email?"
-        },
-        {
-            type: "list",
-            name: "role",
-            message: "select",
-            choices: ['Employee',
-                'Manager',
-                'Engineer',
-                'Intern',
-            ]
-        },
-
-    ]);
-}
 const managerEmp = () => {
     return inquirer
         .prompt([
@@ -109,23 +112,49 @@ const internEmp = () => {
         ]);
 };
 
-const newMember = () => {
-    return inquirer 
-    .prompt([
-        {
-            // Employee Title
-            type: 'list',
-            message: 'Would you like to add another employee?',
-            choices: ['Yes',
-                'No',
-            ],
-            name: 'add_new',
-        },
-    ])
-}
+const makingTeam = () => {
+    let newTeam;
+    if (employeeInfo.role === "Engineer") {
+       return newTeam = new Engineer(name, role, id, email, github);
+    } else if (employeeInfo.role === "Intern") {
+      return  newTeam = new Intern(name, role, id, email, school);
+    } else if (employeeInfo.role === "Manager") {
+       return newTeam = new Manager(name, role, id, email, office_number);
+    } team.push(newTeam); {
+
+    }
+};
+
+const generateHTML =  () => {
+        const genTeamPage = generateTeamPage(team);
+        writeFileAsync("./src/main.html", genTeamPage)
+            .then(() => console.log("Succes!"))
+            .catch(error => console.log(error));
+};
+
 
 
 init();
 
+const newMember = async () => {
+    return inquirer
+        .prompt([
+            {
+                // Employee Title
+                type: 'list',
+                message: 'Would you like to add another employee?',
+                choices: ['Yes',
+                    'No',
+                ],
+                name: 'add_new',
+            },
+        ]).then(response => {
+            if (response.add_new === "Yes") {
+                init();
+            } else if (response.add_new === "No") {
+                console.log("No new employees.");
+                 generateHTML(); 
+            };
 
-
+        });
+    };
